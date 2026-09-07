@@ -494,6 +494,7 @@ input[type='range'] {
   aspect-ratio: 16/9;
 }
 .canvas-frame canvas {
+  image-rendering: pixelated;
   display: block;
   width: 100%;
   height: auto;

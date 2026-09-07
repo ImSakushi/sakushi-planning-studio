@@ -16,6 +16,6 @@ Les routes serveur fixent les domaines Steam et Demirramon. Aucune clé API n’
 
 ## Fidélité
 
-Plan de travail 1280 × 720. Dialogue : (351,45), 578 × 152. Cadres des jaquettes : (321,357) et (721,357), 260 × 344, bord blanc de 5 pixels. Horaires : Determination Mono 32 px. Réponse : 27 px. Le rendu des glyphes peut varier légèrement selon le moteur de canvas du navigateur par rapport à l’anticrénelage de Photoshop.
+Plan de travail 1280 × 720. Dialogue : (351,45), 578 × 152. Cadres des jaquettes : (321,357) et (721,357), 260 × 344, bord blanc de 5 pixels. Horaires : Determination Mono 32 px. Réponse : 27 px. Le texte est dessiné sur une couche dédiée avec un alpha strictement binaire (0 ou 255), puis composé à coordonnées entières. L’aperçu utilise un redimensionnement sans lissage. Les glyphes ne sont jamais comprimés horizontalement pour tenir dans leur emplacement.
 
 Les ressources Undertale/Deltarune et les jaquettes appartiennent à leurs auteurs respectifs. Intégration basée sur le projet d’ImSakushi et le générateur de Demirramon.

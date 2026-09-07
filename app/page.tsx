@@ -170,7 +170,14 @@ export default function Home() {
         const ctx = canvas.current.getContext('2d');
         if (!ctx)
           throw new Error('Le navigateur ne peut pas créer cette image.');
-        drawPlanning(ctx, p, bg, [a, b], d);
+        const textCanvas = document.createElement('canvas');
+        textCanvas.width = 1280;
+        textCanvas.height = 400;
+        const textLayer = textCanvas.getContext('2d', {
+          willReadFrequently: true,
+        });
+        if (!textLayer) throw new Error('Le texte ne peut pas être dessiné.');
+        drawPlanning(ctx, p, bg, [a, b], d, textLayer);
         setRendered(true);
       })
       .catch((e) => {
