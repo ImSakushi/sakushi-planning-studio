@@ -548,6 +548,10 @@ export default function Home() {
                   onChange={(e) => setP({ ...p, subtitle: e.target.value })}
                 />
               </label>
+              <p className="help">
+                Entrée ajoute un saut de ligne. Jusqu’à 3 lignes centrées sous
+                le dialogue.
+              </p>
               <div className="engine-note">
                 <Heart size={15} />
                 <span>
@@ -632,7 +636,7 @@ export default function Home() {
           )}
           {renderError && (
             <p className="error" role="alert">
-              {renderError} Sélectionne une autre jaquette.
+              {renderError}
             </p>
           )}
           <div className="preview-bottom">

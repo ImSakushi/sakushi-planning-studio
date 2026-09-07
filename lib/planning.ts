@@ -81,15 +81,19 @@ export function fittedFontSize(text: string, size: number, maxWidth: number) {
   while (size > 12 && bitmapTextWidth(text, size) > maxWidth) size--;
   return size;
 }
+export function subtitleLayout(subtitle: string) {
+  const lines = subtitle.normalize('NFC').replace(/\r\n?/g, '\n').split('\n');
+  const preferredSize = lines.length >= 3 ? 24 : 27;
+  const size = Math.min(
+    ...lines.map((line) => fittedFontSize(line, preferredSize, 1160)),
+  );
+  const firstBaseline =
+    lines.length === 1 ? 250 : lines.length === 2 ? 236 : 233;
+  const lineHeight = lines.length >= 3 ? 28 : 32;
+  return { lines, size, firstBaseline, lineHeight };
+}
 export function planningFontSizes(p: Planning) {
-  return [
-    ...new Set([
-      fittedFontSize(p.subtitle, 27, 1160),
-      ...p.lives.map((l) =>
-        fittedFontSize(`${l.day} - ${l.time.replace(':', 'h')}`, 32, 380),
-      ),
-    ]),
-  ];
+  return [0, subtitleLayout(p.subtitle).size];
 }
 export function drawPixelText(
   layer: CanvasRenderingContext2D,
@@ -100,14 +104,18 @@ export function drawPixelText(
   maxWidth: number,
   color: string,
   fonts: BitmapFonts,
+  pixelScale = 1,
 ) {
   layer.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-  size = fittedFontSize(text, size, maxWidth);
+  if (size !== 0) size = fittedFontSize(text, size, maxWidth);
   const glyphs = glyphsFor(size);
   const atlas = fonts[size];
   if (!atlas) throw new Error('La police pixel n’est pas encore chargée.');
-  const left = Math.round(centerX - bitmapTextWidth(text, size) / 2);
-  const baseline = Math.round(baselineY);
+  const left =
+    Math.round(
+      (centerX - (bitmapTextWidth(text, size) * pixelScale) / 2) / pixelScale,
+    ) * pixelScale;
+  const baseline = Math.round(baselineY / pixelScale) * pixelScale;
   let pen = 0;
   layer.save();
   layer.imageSmoothingEnabled = false;
@@ -120,10 +128,10 @@ export function drawPixelText(
         sy,
         w,
         h,
-        left + Math.round(pen) + dx,
-        baseline + dy,
-        w,
-        h,
+        left + Math.round(pen + dx) * pixelScale,
+        baseline + dy * pixelScale,
+        w * pixelScale,
+        h * pixelScale,
       );
     pen += advance;
   }
@@ -146,20 +154,36 @@ export function drawPlanning(
   ctx.drawImage(bg, 0, 0, 1280, 720);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(dialogue, 351, 45, 578, 152);
-  textLayer.clearRect(0, 0, textLayer.canvas.width, textLayer.canvas.height);
-  drawPixelText(textLayer, p.subtitle, 27, 651.5, 250, 1160, '#ffffff', fonts);
-  ctx.drawImage(textLayer.canvas, 0, 0);
+  const response = subtitleLayout(p.subtitle);
+  if (response.lines.length > 3)
+    throw new Error(
+      'La réponse peut contenir jusqu’à 3 lignes. Retire un saut de ligne pour exporter.',
+    );
+  response.lines.forEach((line, index) => {
+    drawPixelText(
+      textLayer,
+      line,
+      response.size,
+      651.5,
+      response.firstBaseline + index * response.lineHeight,
+      1160,
+      '#ffffff',
+      fonts,
+    );
+    ctx.drawImage(textLayer.canvas, 0, 0);
+  });
   p.lives.forEach((l, i) => {
     const x = i ? 721 : 321;
     drawPixelText(
       textLayer,
       `${l.day} - ${l.time.replace(':', 'h')}`,
-      32,
+      0,
       i ? 859.8 : 445.8,
       340.5,
       380,
       l.color,
       fonts,
+      2,
     );
     ctx.drawImage(textLayer.canvas, 0, 0);
     ctx.fillStyle = '#ffffff';

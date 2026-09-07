@@ -16,7 +16,7 @@ Les routes serveur fixent les domaines Steam et Demirramon. Aucune clé API n’
 
 ## Fidélité
 
-Plan de travail 1280 × 720. Dialogue : (351,45), 578 × 152. Cadres des jaquettes : (321,357) et (721,357), 260 × 344, bord blanc de 5 pixels. Horaires : Determination Mono 32 px. Réponse : 27 px. Les glyphes Regular sont pré-rastérisés en monochrome depuis le TTF original (tailles 12 à 32 px). Le canvas assemble ces bitmaps à leur taille native, avec leurs avances typographiques et des coordonnées entières. Aucun seuillage des contours ni faux gras n’est appliqué par le navigateur. L’aperçu utilise un redimensionnement sans lissage.
+Plan de travail 1280 × 720. Dialogue : (351,45), 578 × 152. Cadres des jaquettes : (321,357) et (721,357), 260 × 344, bord blanc de 5 pixels. Horaires : grille native de 75 unités du TTF, agrandie exactement 2× (blocs réguliers de 2 × 2 pixels). Réponse : 27 px sur une ou deux lignes, 24 px sur trois lignes. Les retours à la ligne saisis sont conservés. Les glyphes Regular sont pré-rastérisés en monochrome depuis le TTF original (tailles 12 à 32 px). Le canvas assemble ces bitmaps à leur taille native, avec leurs avances typographiques et des coordonnées entières. Aucun seuillage des contours ni faux gras n’est appliqué par le navigateur. L’aperçu utilise un redimensionnement sans lissage.
 
 Les ressources Undertale/Deltarune et les jaquettes appartiennent à leurs auteurs respectifs. Intégration basée sur le projet d’ImSakushi et le générateur de Demirramon.
 
