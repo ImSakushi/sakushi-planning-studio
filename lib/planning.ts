@@ -15,7 +15,17 @@ export type Planning = {
   text: string;
   character: string;
   expression: string;
-  lives: [Live, Live];
+  lives: [Live, Live] | [Live, Live, Live];
+};
+export const thirdLive: Live = {
+  day: 'Dimanche',
+  time: '20:30',
+  title: 'Undertale Yellow',
+  cover: '/template/cover-third.png',
+  zoom: 1,
+  x: 50,
+  y: 50,
+  color: '#ffff00',
 };
 export const initial: Planning = {
   subtitle: "Alors effectivement, j'avais un peu oublié…",
@@ -173,12 +183,16 @@ export function drawPlanning(
     ctx.drawImage(textLayer.canvas, 0, 0);
   });
   p.lives.forEach((l, i) => {
-    const x = i ? 721 : 321;
+    // Frame positions measured from the two supplied PSDs, at native size.
+    const x = (p.lives.length === 3 ? [140, 528, 913] : [321, 721])[i];
+    const centerX = (
+      p.lives.length === 3 ? [269.8, 658.8, 1043.8] : [445.8, 859.8]
+    )[i];
     drawPixelText(
       textLayer,
       `${l.day} - ${l.time.replace(':', 'h')}`,
       0,
-      i ? 859.8 : 445.8,
+      centerX,
       340.5,
       380,
       l.color,
@@ -219,7 +233,7 @@ export function validPlanning(v: unknown): v is Planning {
     typeof p.character === 'string' &&
     typeof p.expression === 'string' &&
     Array.isArray(p.lives) &&
-    p.lives.length === 2 &&
+    (p.lives.length === 2 || p.lives.length === 3) &&
     p.lives.every(
       (l) =>
         l &&

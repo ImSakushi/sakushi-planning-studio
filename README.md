@@ -4,7 +4,7 @@ Créateur de planning de streams fidèle au PSD de Sakushi, accessible sur ordin
 
 **Site : https://imsakushi.github.io/sakushi-planning-studio/**
 
-- Deux lives : jour, heure, couleur, recherche de jeu, import de jaquette et recadrage.
+- Deux lives par défaut, avec un troisième live optionnel : jour, heure, couleur, recherche de jeu, import de jaquette et recadrage. Les trois colonnes reprennent les positions du second PSD.
 - Dialogue Undertale/Deltarune : 59 personnages, 1 012 expressions, génération locale.
 - Réponse centrée sur une à trois lignes.
 - Aperçu et PNG 1280 × 720 produits par le même canvas. Partage natif si disponible.

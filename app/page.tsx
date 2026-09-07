@@ -13,10 +13,13 @@ import {
   Heart,
   RotateCcw,
   Share2,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import characters from '../lib/characters.json';
 import {
   initial,
+  thirdLive,
   drawPlanning,
   planningFontSizes,
   dialogueKey,
@@ -71,6 +74,7 @@ export default function Home() {
   const [exporting, setExporting] = useState(false);
   const canvas = useRef<HTMLCanvasElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const removedThirdLive = useRef<Live>(thirdLive);
   const key = dialogueKey(p);
   const currentDialogue = dialogue.key === key;
   const canExport = rendered && currentDialogue && !generating && !renderError;
@@ -148,11 +152,10 @@ export default function Home() {
         ),
       ),
       cachedImage('/template/background.png'),
-      cachedImage(p.lives[0].cover),
-      cachedImage(p.lives[1].cover),
+      Promise.all(p.lives.map((live) => cachedImage(live.cover))),
       cachedImage(dialogue.src),
     ])
-      .then(([fontEntries, bg, a, b, d]) => {
+      .then(([fontEntries, bg, covers, d]) => {
         if (cancelled || !canvas.current) return;
         const ctx = canvas.current.getContext('2d');
         if (!ctx)
@@ -166,7 +169,7 @@ export default function Home() {
           ctx,
           p,
           bg,
-          [a, b],
+          covers,
           d,
           textLayer,
           Object.fromEntries(fontEntries),
@@ -189,11 +192,21 @@ export default function Home() {
     setRendered(false);
     setP((q) => ({
       ...q,
-      lives: q.lives.map((l, i) => (i === active ? { ...l, ...v } : l)) as [
-        Live,
-        Live,
-      ],
+      lives: q.lives.map((l, i) =>
+        i === active ? { ...l, ...v } : l,
+      ) as Planning['lives'],
     }));
+  }
+  function toggleThirdLive() {
+    setRendered(false);
+    if (p.lives.length === 3) {
+      removedThirdLive.current = p.lives[2];
+      setP({ ...p, lives: [p.lives[0], p.lives[1]] });
+      setActive(Math.min(active, 1));
+    } else {
+      setP({ ...p, lives: [...p.lives, { ...removedThirdLive.current }] });
+      setActive(2);
+    }
   }
   async function exportPng(share = false) {
     if (!canvas.current || !canExport) return;
@@ -225,6 +238,8 @@ export default function Home() {
       const data = JSON.parse(await file.text());
       if (!validPlanning(data)) throw new Error();
       setP(data);
+      setActive(0);
+      removedThirdLive.current = data.lives[2] || thirdLive;
       setNotice('Projet ouvert.');
     } catch {
       setNotice('Ce fichier n’est pas un projet de planning valide.');
@@ -269,7 +284,7 @@ export default function Home() {
           </h1>
         </div>
         <span className="format-pill">
-          2 lives <span>·</span> 1280 × 720
+          {p.lives.length} lives <span>·</span> 1280 × 720
         </span>
       </div>
       <div className="workspace">
@@ -300,11 +315,12 @@ export default function Home() {
           </div>
           {tab === 'lives' ? (
             <div className="panel">
-              <div className="section-label">TES DEUX RENDEZ-VOUS</div>
+              <div className="section-label">TES RENDEZ-VOUS</div>
               <div className="live-picker">
                 {p.lives.map((l, i) => (
                   <button
                     key={i}
+                    aria-pressed={i === active}
                     onClick={() => setActive(i)}
                     className={i === active ? 'active' : ''}
                   >
@@ -317,6 +333,16 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+              <button className="live-count-button" onClick={toggleThirdLive}>
+                {p.lives.length === 2 ? (
+                  <Plus size={15} />
+                ) : (
+                  <Minus size={15} />
+                )}
+                {p.lives.length === 2
+                  ? 'Ajouter un troisième live'
+                  : 'Retirer le troisième live'}
+              </button>
               <div className="divider" />
               <div className="section-title">
                 <h2>Live 0{active + 1}</h2>
@@ -625,7 +651,7 @@ export default function Home() {
               <span className="pixel-star">✦</span>
               <div>
                 <strong>La semaine est à toi.</strong>
-                <p>Deux jeux, un dialogue, et rendez-vous en live.</p>
+                <p>Tes jeux, un dialogue, et rendez-vous en live.</p>
               </div>
             </div>
             <button
