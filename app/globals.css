@@ -1,5 +1,7 @@
 @font-face {
   font-family: DeterminationMono;
+  font-weight: 400;
+  font-style: normal;
   src: url('/fonts/DeterminationMono.ttf') format('truetype');
   font-display: block;
 }

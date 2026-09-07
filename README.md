@@ -16,6 +16,8 @@ Les routes serveur fixent les domaines Steam et Demirramon. Aucune clé API n’
 
 ## Fidélité
 
-Plan de travail 1280 × 720. Dialogue : (351,45), 578 × 152. Cadres des jaquettes : (321,357) et (721,357), 260 × 344, bord blanc de 5 pixels. Horaires : Determination Mono 32 px. Réponse : 27 px. Le texte est dessiné sur une couche dédiée avec un alpha strictement binaire (0 ou 255), puis composé à coordonnées entières. L’aperçu utilise un redimensionnement sans lissage. Les glyphes ne sont jamais comprimés horizontalement pour tenir dans leur emplacement.
+Plan de travail 1280 × 720. Dialogue : (351,45), 578 × 152. Cadres des jaquettes : (321,357) et (721,357), 260 × 344, bord blanc de 5 pixels. Horaires : Determination Mono 32 px. Réponse : 27 px. Les glyphes Regular sont pré-rastérisés en monochrome depuis le TTF original (tailles 12 à 32 px). Le canvas assemble ces bitmaps à leur taille native, avec leurs avances typographiques et des coordonnées entières. Aucun seuillage des contours ni faux gras n’est appliqué par le navigateur. L’aperçu utilise un redimensionnement sans lissage.
 
 Les ressources Undertale/Deltarune et les jaquettes appartiennent à leurs auteurs respectifs. Intégration basée sur le projet d’ImSakushi et le générateur de Demirramon.
+
+Les atlas peuvent être régénérés avec `python scripts/generate-bitmap-font.py` (Pillow et fonttools requis). Le TTF Regular d’origine est la seule source des glyphes.

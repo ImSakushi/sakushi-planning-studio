@@ -1,3 +1,5 @@
+import bitmapFont from './bitmap-font.json';
+
 export type Live = {
   day: string;
   time: string;
@@ -62,8 +64,33 @@ export function coverRect(
     y: (-(ih * scale - h) * y) / 100,
   };
 }
-// Canvas imageSmoothingEnabled does not disable font antialiasing. Render
-// text on a transparent layer, then make its coverage strictly binary.
+// Pre-rasterized regular glyphs: no browser font hinting, threshold, or faux bold.
+const fontMetrics = bitmapFont as Record<string, Record<string, number[]>>;
+export type BitmapFonts = Record<number, CanvasImageSource>;
+const glyphsFor = (size: number) => fontMetrics[String(size)];
+const cleanText = (text: string) =>
+  text.normalize('NFC').replace(/[\r\n\t]/g, ' ');
+export function bitmapTextWidth(text: string, size: number) {
+  const glyphs = glyphsFor(size);
+  return [...cleanText(text)].reduce(
+    (width, char) => width + (glyphs[char] || glyphs['?'])[6],
+    0,
+  );
+}
+export function fittedFontSize(text: string, size: number, maxWidth: number) {
+  while (size > 12 && bitmapTextWidth(text, size) > maxWidth) size--;
+  return size;
+}
+export function planningFontSizes(p: Planning) {
+  return [
+    ...new Set([
+      fittedFontSize(p.subtitle, 27, 1160),
+      ...p.lives.map((l) =>
+        fittedFontSize(`${l.day} - ${l.time.replace(':', 'h')}`, 32, 380),
+      ),
+    ]),
+  ];
+}
 export function drawPixelText(
   layer: CanvasRenderingContext2D,
   text: string,
@@ -72,45 +99,38 @@ export function drawPixelText(
   baselineY: number,
   maxWidth: number,
   color: string,
+  fonts: BitmapFonts,
 ) {
   layer.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-  layer.font = `${size}px DeterminationMono`;
-  while (size > 1 && layer.measureText(text).width > maxWidth) {
-    layer.font = `${--size}px DeterminationMono`;
+  size = fittedFontSize(text, size, maxWidth);
+  const glyphs = glyphsFor(size);
+  const atlas = fonts[size];
+  if (!atlas) throw new Error('La police pixel n’est pas encore chargée.');
+  const left = Math.round(centerX - bitmapTextWidth(text, size) / 2);
+  const baseline = Math.round(baselineY);
+  let pen = 0;
+  layer.save();
+  layer.imageSmoothingEnabled = false;
+  for (const char of cleanText(text)) {
+    const [sx, sy, w, h, dx, dy, advance] = glyphs[char] || glyphs['?'];
+    if (w && h)
+      layer.drawImage(
+        atlas,
+        sx,
+        sy,
+        w,
+        h,
+        left + Math.round(pen) + dx,
+        baseline + dy,
+        w,
+        h,
+      );
+    pen += advance;
   }
-  layer.fillStyle = '#ffffff';
-  layer.textAlign = 'left';
-  layer.textBaseline = 'alphabetic';
-  // Do not use fillText's maxWidth: it stretches the glyphs fractionally.
-  layer.fillText(
-    text,
-    Math.round(centerX - layer.measureText(text).width / 2),
-    Math.round(baselineY),
-  );
-  removeTextAntialiasing(layer, color);
-}
-
-export function removeTextAntialiasing(
-  layer: CanvasRenderingContext2D,
-  color: string,
-) {
-  const rgb = [1, 3, 5].map((start) =>
-    parseInt(color.slice(start, start + 2), 16),
-  );
-  const pixels = layer.getImageData(
-    0,
-    0,
-    layer.canvas.width,
-    layer.canvas.height,
-  );
-  for (let i = 3; i < pixels.data.length; i += 4) {
-    pixels.data[i] = pixels.data[i] >= 128 ? 255 : 0;
-    // Tint after thresholding to avoid premultiplied-alpha rounding fringes.
-    pixels.data[i - 3] = rgb[0];
-    pixels.data[i - 2] = rgb[1];
-    pixels.data[i - 1] = rgb[2];
-  }
-  layer.putImageData(pixels, 0, 0);
+  layer.globalCompositeOperation = 'source-in';
+  layer.fillStyle = color;
+  layer.fillRect(0, 0, layer.canvas.width, layer.canvas.height);
+  layer.restore();
 }
 
 export function drawPlanning(
@@ -120,13 +140,14 @@ export function drawPlanning(
   covers: HTMLImageElement[],
   dialogue: CanvasImageSource,
   textLayer: CanvasRenderingContext2D,
+  fonts: BitmapFonts,
 ) {
   ctx.clearRect(0, 0, 1280, 720);
   ctx.drawImage(bg, 0, 0, 1280, 720);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(dialogue, 351, 45, 578, 152);
   textLayer.clearRect(0, 0, textLayer.canvas.width, textLayer.canvas.height);
-  drawPixelText(textLayer, p.subtitle, 27, 651.5, 250, 1160, '#ffffff');
+  drawPixelText(textLayer, p.subtitle, 27, 651.5, 250, 1160, '#ffffff', fonts);
   ctx.drawImage(textLayer.canvas, 0, 0);
   p.lives.forEach((l, i) => {
     const x = i ? 721 : 321;
@@ -138,6 +159,7 @@ export function drawPlanning(
       340.5,
       380,
       l.color,
+      fonts,
     );
     ctx.drawImage(textLayer.canvas, 0, 0);
     ctx.fillStyle = '#ffffff';

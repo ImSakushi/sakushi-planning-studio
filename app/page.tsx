@@ -18,6 +18,7 @@ import characters from '../lib/characters.json';
 import {
   initial,
   drawPlanning,
+  planningFontSizes,
   dialogueKey,
   validPlanning,
   type Planning,
@@ -159,13 +160,18 @@ export default function Home() {
     setRendered(false);
     setRenderError('');
     Promise.all([
-      document.fonts.load('32px DeterminationMono'),
+      Promise.all(
+        planningFontSizes(p).map(
+          async (size) =>
+            [size, await cachedImage(`/fonts/bitmap/${size}.png`)] as const,
+        ),
+      ),
       cachedImage('/template/background.png'),
       cachedImage(p.lives[0].cover),
       cachedImage(p.lives[1].cover),
       cachedImage(dialogue.src),
     ])
-      .then(([, bg, a, b, d]) => {
+      .then(([fontEntries, bg, a, b, d]) => {
         if (cancelled || !canvas.current) return;
         const ctx = canvas.current.getContext('2d');
         if (!ctx)
@@ -173,11 +179,17 @@ export default function Home() {
         const textCanvas = document.createElement('canvas');
         textCanvas.width = 1280;
         textCanvas.height = 400;
-        const textLayer = textCanvas.getContext('2d', {
-          willReadFrequently: true,
-        });
+        const textLayer = textCanvas.getContext('2d');
         if (!textLayer) throw new Error('Le texte ne peut pas être dessiné.');
-        drawPlanning(ctx, p, bg, [a, b], d, textLayer);
+        drawPlanning(
+          ctx,
+          p,
+          bg,
+          [a, b],
+          d,
+          textLayer,
+          Object.fromEntries(fontEntries),
+        );
         setRendered(true);
       })
       .catch((e) => {
