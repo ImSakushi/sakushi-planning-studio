@@ -237,6 +237,9 @@ export function validPlanning(v: unknown): v is Planning {
         /^([01]\d|2[0-3]):[0-5]\d$/.test(l.time) &&
         typeof l.cover === 'string' &&
         (l.cover.startsWith('/template/') ||
+          /^https:\/\/shared\.akamai\.steamstatic\.com\/store_item_assets\/steam\/apps\/\d+\/(library_600x900(?:_2x)?|header)\.jpg$/.test(
+            l.cover,
+          ) ||
           /^\/api\/cover\?id=\d+$/.test(l.cover) ||
           /^data:image\/(png|jpeg|webp);base64,/.test(l.cover)) &&
         /^#[\da-f]{6}$/i.test(l.color) &&

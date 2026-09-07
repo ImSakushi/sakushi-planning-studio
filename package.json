@@ -1,16 +1,18 @@
 {
-  "name": "sites-project",
+  "name": "sakushi-planning-studio",
   "version": "0.1.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev",
-    "build": "vinext build",
-    "start": "wrangler dev --config dist/server/wrangler.json",
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "start": "vite preview --host 0.0.0.0",
     "lint": "oxlint",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "check": "tsc --noEmit",
+    "refresh:games": "node scripts/refresh-games.mjs"
   },
   "dependencies": {
     "react": "19.2.6",

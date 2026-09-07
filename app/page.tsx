@@ -24,6 +24,15 @@ import {
   type Planning,
   type Live,
 } from '../lib/planning';
+import {
+  assetUrl,
+  displayImageUrl,
+  loadImage,
+  cachedImage,
+  findSteamCover,
+} from '../lib/assets';
+import { renderDialogue } from '../lib/local-dialogue';
+import { searchGames } from '../lib/game-search';
 const days = [
   'Lundi',
   'Mardi',
@@ -33,26 +42,6 @@ const days = [
   'Samedi',
   'Dimanche',
 ];
-const loadImage = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const im = new Image();
-    im.onload = () => resolve(im);
-    im.onerror = () => reject(new Error('Une image ne peut pas être chargée.'));
-    im.src = src;
-  });
-const imageCache = new Map<string, Promise<HTMLImageElement>>();
-function cachedImage(src: string) {
-  if (!imageCache.has(src)) {
-    const p = loadImage(src).catch((e) => {
-      imageCache.delete(src);
-      throw e;
-    });
-    imageCache.set(src, p);
-    if (imageCache.size > 24)
-      imageCache.delete(imageCache.keys().next().value!);
-  }
-  return imageCache.get(src)!;
-}
 function download(blob: Blob, name: string) {
   const a = document.createElement('a');
   const url = URL.createObjectURL(blob);
@@ -128,27 +117,19 @@ export default function Home() {
     setGenError('');
     const t = setTimeout(async () => {
       try {
-        const r = await fetch('/api/dialogue', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: p.text,
-            character: p.character,
-            expression: p.expression,
-          }),
-          signal: c.signal,
+        const src = await renderDialogue({
+          text: p.text,
+          character: p.character,
+          expression: p.expression,
         });
-        const j = (await r.json()) as { error?: string; image: string };
-        if (!r.ok)
-          throw new Error(j.error || 'Le générateur est indisponible.');
-        setDialogue({ key, src: j.image });
+        if (!c.signal.aborted) setDialogue({ key, src });
       } catch (e) {
         if (!c.signal.aborted)
           setGenError(e instanceof Error ? e.message : 'Erreur du générateur.');
       } finally {
         if (!c.signal.aborted) setGenerating(false);
       }
-    }, 650);
+    }, 100);
     return () => {
       clearTimeout(t);
       c.abort();
@@ -254,7 +235,7 @@ export default function Home() {
   return (
     <main>
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Planning Studio">
+        <a className="brand" href={assetUrl('/')} aria-label="Planning Studio">
           <span className="brand-icon">
             <CalendarDays size={23} />
           </span>
@@ -372,7 +353,7 @@ export default function Home() {
               />
               <div className="cover-editor">
                 <img
-                  src={live.cover}
+                  src={displayImageUrl(live.cover)}
                   alt={`Jaquette de ${live.title}`}
                   style={{ objectPosition: `${live.x}% ${live.y}%` }}
                 />
@@ -555,7 +536,7 @@ export default function Home() {
               <div className="engine-note">
                 <Heart size={15} />
                 <span>
-                  Personnages et rendu du{' '}
+                  Personnages du{' '}
                   <a
                     href="https://github.com/ImSakushi/undertale-text-box-generator"
                     target="_blank"
@@ -705,15 +686,8 @@ function GameSearch({
     setError('');
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/games?q=${encodeURIComponent(q.trim())}`, {
-          signal: c.signal,
-        });
-        const j = (await r.json()) as {
-          error?: string;
-          items: { id: number; name: string; thumbnail: string }[];
-        };
-        if (!r.ok) throw new Error(j.error || 'Recherche indisponible.');
-        setResults(j.items);
+        const items = await searchGames(q.trim(), c.signal);
+        if (!c.signal.aborted) setResults(items);
       } catch (e) {
         if (!c.signal.aborted)
           setError(e instanceof Error ? e.message : 'Recherche indisponible.');
@@ -736,8 +710,7 @@ function GameSearch({
     const n = ++seq.current;
     setChoosing(true);
     try {
-      const cover = `/api/cover?id=${g.id}`;
-      await cachedImage(cover);
+      const { src: cover } = await findSteamCover(g.id);
       if (n !== seq.current) return;
       onSelect({ title: g.name, cover, zoom: 1, x: 50, y: 50 });
       setQ('');
@@ -771,7 +744,9 @@ function GameSearch({
           }}
         />
       </div>
-      <p className="help">Jaquettes Steam, recadrées automatiquement.</p>
+      <p className="help">
+        Catalogue Steam, jaquettes recadrées automatiquement.
+      </p>
       {open && q.trim().length >= 2 && (
         <div className="search-results" aria-label="Résultats de recherche">
           {busy ? (
